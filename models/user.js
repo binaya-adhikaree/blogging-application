@@ -1,47 +1,58 @@
-const { Schema, model } = require("mongoose")
-const { createHmac, randomBytes } = require("crypto");
+const { Schema, model } = require("mongoose");
+const bcrypt = require("bcrypt");
+const { createTokenForUser } = require("../services/authentication");  // Assuming token creation is handled here
 
-
-const userSchema = new Schema({
+// User Schema Definition
+const userSchema = new Schema(
+  {
     fullName: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     email: {
-        type: String,
-        required: true,
-        unique: true
+      type: String,
+      required: true,
+      unique: true,
     },
     password: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     profileImage: {
-        type: String,
-        default: "/public/images/defaultProfile.png",
+      type: String,
+      default: "/public/images/defaultProfile.png",
     },
     role: {
-        type: String,
-        enum: ["USER", "ADMIN"],
-        default: "USER"
-    }
-}, { timestamps: true });
+      type: String,
+      enum: ["USER", "ADMIN"],
+      default: "USER",
+    },
+  },
+  { timestamps: true }
+);
 
-userSchema.pre("save", function (next) {
-    const user = this;
-    if (!user.isModified("password")) return;
+// Hash Password Before Saving
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
 
-    const salt = randomBytes(16).toString();
-    const hashPassword = createHmac("sha256", salt)
-        .update(user.password)
-        .digest("hex")
+// Static Method for Password Validation
+userSchema.static("matchPassword", async function (email, password) {
+  const user = await this.findOne({ email });
+  if (!user) throw new Error("User not found");
 
-    this.salt = salt;
-    this.password = hashPassword;
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) throw new Error("Incorrect password");
 
-    next();
-})
+  // Return JWT Token if Password Matches
+  const token = createTokenForUser(user);
+  return token;
+});
 
-const User = model("user", userSchema);
-
+// Create and Export User Model
+const User = model("User", userSchema);
 module.exports = User;

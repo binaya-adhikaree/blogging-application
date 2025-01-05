@@ -7,7 +7,8 @@ async function handleSignup(req, res) {
     const { fullName, email, password } = req.body;
 
     // Hash the password before saving
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(password, salt);
 
     await User.create({
         fullName,
@@ -15,20 +16,20 @@ async function handleSignup(req, res) {
         password: hashedPassword,  // Save the hashed password
     });
 
-    return res.send("hello ");
+    return res.redirect("/user/signin");
 }
 
 // Handle user sign in
 async function handleSignin(req, res) {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-
     if (!user) {
         return res.end("Invalid email or password");
     }
 
     // Compare the provided password with the stored hashed password
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    console.log(isPasswordCorrect)
     if (!isPasswordCorrect) {
 
         return res.render("signin", {
@@ -37,7 +38,7 @@ async function handleSignin(req, res) {
     }
 
     // If the password matches, generate a token (example: JWT token)
-    const token = jwt.sign({ userId: user._id }, "kaizennoob", { expiresIn: "1h" });
+    const token = jwt.sign({ userId: user._id }, "kaizennoob", { expiresIn: "1d" });
     return res.cookie("token", token).redirect("/");
 }
 

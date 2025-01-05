@@ -25,8 +25,7 @@ router.get("/add-new", (req, res) => {
 
 router.get("/:id", async (req, res) => {
     // Populate the createdBy field correctly
-    const blog = await Blog.findById(req.params.id).populate("createdBy");
-    console.log(blog);  // Check if `createdBy` is populated correctly
+    const blog = await Blog.findById(req.params.id).populate("createdBy");// Check if `createdBy` is populated correctly
     const comments = await Comment.find({ blogId: req.params.id }).populate("createdBy");
 
     return res.render("blogs", {
@@ -35,6 +34,18 @@ router.get("/:id", async (req, res) => {
         comments
     });
 });
+
+
+
+
+router.post('/comment/:blogId', async (req, res) => {
+    await Comment.create({
+        content: req.body.content,
+        blogId: req.params.blogId.trim(),
+        createdBy: req.user.userId
+    });
+    return res.redirect(`blog/${req.params.blogId}`)
+})
 
 
 router.post("/", upload.single("coverImage"), async (req, res) => {
@@ -47,16 +58,6 @@ router.post("/", upload.single("coverImage"), async (req, res) => {
     });
     return res.redirect(`/blog/${blog._id}`);
 });
-
-
-router.post('/comment/:blogId', async (req, res) => {
-    const comment = await Comment.create({
-        content: req.body.content,
-        blogId: req.params.blogId.trim(),
-        createdBy: req.user.userId
-    });
-    return res.redirect(`blog/${req.params.blogId}`)
-})
 
 
 

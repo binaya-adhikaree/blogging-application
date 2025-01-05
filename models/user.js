@@ -32,7 +32,7 @@ const userSchema = new Schema(
 );
 
 // Hash Password Before Saving
-userSchema.pre("save", async function(next) {
+userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
   const salt = await bcrypt.genSalt(10);
@@ -41,11 +41,11 @@ userSchema.pre("save", async function(next) {
 });
 
 // Static Method for Password Validation
-userSchema.methods.matchPassword = async function(password) {
+userSchema.methods.matchPassword = async function (password) {
   const isMatch = await bcrypt.compare(password, this.password);
   return isMatch;
 }
 
 // Create and Export User Model
-const User = model("User", userSchema);
+const User = model("user", userSchema);
 module.exports = User;

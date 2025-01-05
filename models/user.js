@@ -32,26 +32,19 @@ const userSchema = new Schema(
 );
 
 // Hash Password Before Saving
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function(next) {
   if (!this.isModified("password")) return next();
-  
+
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
 // Static Method for Password Validation
-userSchema.static("matchPassword", async function (email, password) {
-  const user = await this.findOne({ email });
-  if (!user) throw new Error("User not found");
-
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) throw new Error("Incorrect password");
-
-  // Return JWT Token if Password Matches
-  const token = createTokenForUser(user);
-  return token;
-});
+userSchema.methods.matchPassword = async function(password) {
+  const isMatch = await bcrypt.compare(password, this.password);
+  return isMatch;
+}
 
 // Create and Export User Model
 const User = model("User", userSchema);

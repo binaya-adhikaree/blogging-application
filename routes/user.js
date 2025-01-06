@@ -14,9 +14,9 @@ router.get("/signup", (req, res) => {
     return res.render("signup")
 });
 
-router.post("/signup", handleSignup)
+router.post("/signup", handleSignup);
 
-router.get("/logout", handleLogout)
+router.get("/logout", handleLogout);
 
 
 module.exports = router;
